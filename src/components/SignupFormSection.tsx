@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,12 +7,19 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 const SignupFormSection = () => {
   const { toast } = useToast();
+  const { signUp, user } = useAuth();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     parentName: '',
     parentEmail: '',
+    password: '',
     childName: '',
     childAge: '',
     childGrade: '',
@@ -43,18 +49,70 @@ const SignupFormSection = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
-    
-    toast({
-      title: "Welcome to the family! 🎉",
-      description: `${formData.childName}'s first personalized newsletter will arrive within 24 hours!`,
-    });
-    
-    // Here you would normally send the data to your backend
-    // For now, we'll just show the success message
+    setLoading(true);
+
+    try {
+      // Sign up the parent
+      const { error: signUpError } = await signUp(
+        formData.parentEmail, 
+        formData.password, 
+        formData.parentName
+      );
+
+      if (signUpError) {
+        throw signUpError;
+      }
+
+      // Get the current user session to create child profile
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        // Create child profile
+        const { error: childError } = await supabase
+          .from('children')
+          .insert({
+            parent_id: session.user.id,
+            name: formData.childName,
+            age: parseInt(formData.childAge),
+            grade: formData.childGrade,
+            interests: formData.interests,
+            favorite_shows: formData.favoriteShows,
+            hobbies: formData.hobbies,
+            delivery_schedule: formData.deliverySchedule
+          });
+
+        if (childError) {
+          console.error('Child creation error:', childError);
+          // Don't throw here as the user account was created successfully
+        }
+      }
+
+      toast({
+        title: "Welcome to the family! 🎉",
+        description: `${formData.childName}'s first personalized newsletter will arrive within 24 hours! Please check your email to verify your account.`,
+      });
+
+      // Redirect to dashboard
+      navigate('/dashboard');
+      
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
+
+  // If user is already logged in, redirect to dashboard
+  if (user) {
+    navigate('/dashboard');
+    return null;
+  }
 
   return (
     <section id="signup-form" className="py-20 px-4 bg-gradient-to-br from-purple-50 to-pink-50">
@@ -73,7 +131,7 @@ const SignupFormSection = () => {
             {/* Parent Information */}
             <div className="space-y-6">
               <h3 className="text-2xl font-bold text-gray-800 border-b pb-2">Parent Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="parentName">Your Name *</Label>
                   <Input
@@ -92,6 +150,18 @@ const SignupFormSection = () => {
                     value={formData.parentEmail}
                     onChange={(e) => setFormData(prev => ({ ...prev, parentEmail: e.target.value }))}
                     required
+                    className="border-2 focus:border-purple-500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password *</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                    required
+                    minLength={6}
                     className="border-2 focus:border-purple-500"
                   />
                 </div>
@@ -220,9 +290,10 @@ const SignupFormSection = () => {
             <div className="text-center pt-8">
               <Button 
                 type="submit"
+                disabled={loading}
                 className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-12 py-4 text-lg rounded-full transform hover:scale-105 transition-all duration-200 shadow-lg"
               >
-                Start My Free Subscription 🎉
+                {loading ? 'Creating Account...' : 'Start My Free Subscription 🎉'}
               </Button>
               <p className="text-sm text-gray-500 mt-4">
                 ✨ Always free • No credit card required • Cancel anytime

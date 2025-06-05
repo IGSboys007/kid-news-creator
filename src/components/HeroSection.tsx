@@ -2,16 +2,50 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowDown } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 const HeroSection = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
   const scrollToSignup = () => {
-    document.getElementById('signup-form')?.scrollIntoView({ behavior: 'smooth' });
+    if (user) {
+      navigate('/dashboard');
+    } else {
+      document.getElementById('signup-form')?.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleAuthNavigation = () => {
+    navigate('/auth');
   };
 
   return (
     <section className="relative min-h-screen flex items-center justify-center px-4 py-20">
       <div className="container mx-auto max-w-6xl text-center">
         <div className="space-y-8">
+          {/* Header Navigation */}
+          <div className="absolute top-8 right-8">
+            {user ? (
+              <Button 
+                onClick={() => navigate('/dashboard')}
+                variant="outline"
+                className="bg-white/80 backdrop-blur-sm"
+              >
+                Dashboard
+              </Button>
+            ) : (
+              <Button 
+                onClick={handleAuthNavigation}
+                variant="outline"
+                className="bg-white/80 backdrop-blur-sm"
+              >
+                Sign In
+              </Button>
+            )}
+          </div>
+
           <div className="space-y-4">
             <h1 className="text-5xl md:text-7xl font-bold text-gray-800 leading-tight">
               Get Your Child 
@@ -31,7 +65,7 @@ const HeroSection = () => {
               onClick={scrollToSignup}
               className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-4 text-lg rounded-full transform hover:scale-105 transition-all duration-200 shadow-lg"
             >
-              Create My Child's Free Profile
+              {user ? 'Go to Dashboard' : 'Create My Child\'s Free Profile'}
             </Button>
             <p className="text-sm text-gray-500">✨ Always free • No credit card required</p>
           </div>

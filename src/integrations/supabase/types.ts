@@ -9,7 +9,110 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      children: {
+        Row: {
+          age: number
+          created_at: string | null
+          delivery_schedule: Database["public"]["Enums"]["delivery_schedule"]
+          favorite_shows: string | null
+          grade: string | null
+          hobbies: string | null
+          id: string
+          interests: string[] | null
+          is_active: boolean | null
+          name: string
+          parent_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          age: number
+          created_at?: string | null
+          delivery_schedule?: Database["public"]["Enums"]["delivery_schedule"]
+          favorite_shows?: string | null
+          grade?: string | null
+          hobbies?: string | null
+          id?: string
+          interests?: string[] | null
+          is_active?: boolean | null
+          name: string
+          parent_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          age?: number
+          created_at?: string | null
+          delivery_schedule?: Database["public"]["Enums"]["delivery_schedule"]
+          favorite_shows?: string | null
+          grade?: string | null
+          hobbies?: string | null
+          id?: string
+          interests?: string[] | null
+          is_active?: boolean | null
+          name?: string
+          parent_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      newsletters: {
+        Row: {
+          child_id: string
+          content: Json | null
+          created_at: string | null
+          id: string
+          pdf_url: string | null
+          sent_at: string | null
+          title: string
+        }
+        Insert: {
+          child_id: string
+          content?: Json | null
+          created_at?: string | null
+          id?: string
+          pdf_url?: string | null
+          sent_at?: string | null
+          title: string
+        }
+        Update: {
+          child_id?: string
+          content?: Json | null
+          created_at?: string | null
+          id?: string
+          pdf_url?: string | null
+          sent_at?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "newsletters_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          id: string
+          parent_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          parent_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          parent_name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +121,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      delivery_schedule: "daily" | "every-other-day" | "weekly"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +236,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      delivery_schedule: ["daily", "every-other-day", "weekly"],
+    },
   },
 } as const
